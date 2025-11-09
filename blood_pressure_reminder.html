@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>7天降压饮食运动提醒系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 0;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 100%;
+            margin: 0;
+            background: white;
+            border-radius: 0;
+            box-shadow: none;
+            overflow: hidden;
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: max(env(safe-area-inset-top), 20px) 16px 20px 16px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            font-size: 20px;
+            margin-bottom: 6px;
+            font-weight: 700;
+        }
+        
+        .header p {
+            font-size: 13px;
+            opacity: 0.95;
+        }
+        
+        .day-selector {
+            display: flex;
+            overflow-x: auto;
+            padding: 15px;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+        }
+        
+        .day-btn {
+            min-width: 80px;
+            padding: 12px 20px;
+            margin-right: 10px;
+            border: none;
+            background: white;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .day-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .day-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .content {
+            padding: 20px;
+        }
+        
+        .meal-section {
+            margin-bottom: 25px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            border-left: 5px solid #667eea;
+        }
+        
+        .meal-section h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .meal-section h3::before {
+            content: "🍽️";
+            margin-right: 8px;
+        }
+        
+        .meal-section p {
+            color: #333;
+            line-height: 1.8;
+            font-size: 15px;
+        }
+        
+        .snack-section h3::before {
+            content: "🍎";
+        }
+        
+        .drink-section h3::before {
+            content: "💧";
+        }
+        
+        .tips-section {
+            background: #fff3cd;
+            border-left-color: #ffc107;
+            margin-top: 20px;
+        }
+        
+        .tips-section h3 {
+            color: #856404;
+        }
+        
+        .tips-section h3::before {
+            content: "⚠️";
+        }
+        
+        .blood-pressure-section {
+            background: #d1ecf1;
+            border-left-color: #17a2b8;
+            margin-top: 20px;
+        }
+        
+        .blood-pressure-section h3 {
+            color: #0c5460;
+        }
+        
+        .blood-pressure-section h3::before {
+            content: "📊";
+        }
+        
+        .record-form {
+            display: grid;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-group label {
+            font-size: 13px;
+            color: #0c5460;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        .form-group input {
+            padding: 10px;
+            border: 2px solid #bee5eb;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .save-btn {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .save-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(23,162,184,0.3);
+        }
+        
+        .records-display {
+            margin-top: 15px;
+            font-size: 13px;
+        }
+        
+        .record-item {
+            padding: 10px;
+            background: white;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .schedule-section {
+            background: #d4edda;
+            border-left-color: #28a745;
+            margin-top: 20px;
+        }
+        
+        .schedule-section h3 {
+            color: #155724;
+        }
+        
+        .schedule-section h3::before {
+            content: "⏰";
+        }
+        
+        .schedule-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            background: white;
+            margin-bottom: 8px;
+            border-radius: 8px;
+        }
+        
+        .schedule-time {
+            font-weight: 700;
+            color: #28a745;
+            min-width: 60px;
+        }
+        
+        .schedule-action {
+            flex: 1;
+            margin-left: 15px;
+        }
+        
+        .progress-section {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .progress-section h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+        
+        .progress-bar {
+            background: #e9ecef;
+            height: 30px;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+            transition: width 0.5s ease;
+        }
+        
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: #f8f9fa;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .checkbox-item:hover {
+            background: #e9ecef;
+        }
+        
+        .checkbox-item input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-right: 12px;
+            cursor: pointer;
+        }
+        
+        .checkbox-item.checked {
+            background: #d4edda;
+            text-decoration: line-through;
+            opacity: 0.7;
+        }
+        
+        @media (max-width: 600px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .day-selector {
+                padding: 10px;
+            }
+            
+            .day-btn {
+                min-width: 70px;
+                padding: 10px 15px;
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🫀 7天降压饮食运动提醒系统</h1>
+            <p>坚持7天，舒张压下降3-10 mmHg</p>
+        </div>
+        
+        <div class="day-selector">
+            <button class="day-btn active" onclick="showDay(1)">第1天</button>
+            <button class="day-btn" onclick="showDay(2)">第2天</button>
+            <button class="day-btn" onclick="showDay(3)">第3天</button>
+            <button class="day-btn" onclick="showDay(4)">第4天</button>
+            <button class="day-btn" onclick="showDay(5)">第5天</button>
+            <button class="day-btn" onclick="showDay(6)">第6天</button>
+            <button class="day-btn" onclick="showDay(7)">第7天</button>
+        </div>
+        
+        <div class="content" id="content">
+            <!-- 内容将由JavaScript动态生成 -->
+        </div>
+    </div>
+
+    <script>
+        const dietPlan = {
+            1: {
+                breakfast: "燕麦粥50g + 香蕉1根 + 脱脂奶200ml",
+                lunch: "清蒸鲈鱼100g + 菠菜200g（少油） + 糙米饭100g",
+                dinner: "西红柿鸡蛋汤 + 凉拌木耳黄瓜 + 红薯100g",
+                snack: "上午：苹果1个 | 下午：无盐坚果10g",
+                drink: "白开水≥2L，淡菊花茶"
+            },
+            2: {
+                breakfast: "全麦面包2片 + 水煮蛋1个 + 生菜沙拉（橄榄油1勺）",
+                lunch: "瘦牛肉炒西兰花150g + 杂豆饭100g",
+                dinner: "紫菜蛋花汤 + 清炒油麦菜 + 玉米1根",
+                snack: "上午：橙子1个 | 下午：酸奶无糖150g",
+                drink: "温水+柠檬片"
+            },
+            3: {
+                breakfast: "红豆薏米粥（各30g） + 猕猴桃1个",
+                lunch: "三文鱼蒸100g + 芦笋150g + 荞麦面80g",
+                dinner: "冬瓜排骨汤（去油） + 拌海带丝",
+                snack: "上午：梨1个 | 下午：杏仁8粒",
+                drink: "淡绿茶（无糖）"
+            },
+            4: {
+                breakfast: "燕麦+蓝莓+希腊酸奶150g",
+                lunch: "鸡胸肉沙拉（生菜、黄瓜、樱桃番茄）+ 红薯泥",
+                dinner: "鲫鱼豆腐汤 + 清炒空心菜 + 糙米50g",
+                snack: "上午：火龙果半个 | 下午：核桃3个",
+                drink: "白开水"
+            },
+            5: {
+                breakfast: "全麦吐司+鳄梨1/4个+水煮蛋",
+                lunch: "瘦猪肉炖莲藕 + 蒸南瓜 + 杂粮饭",
+                dinner: "菌菇蔬菜汤 + 凉拌苦菊",
+                snack: "上午：香蕉1根 | 下午：无花果干3片",
+                drink: "罗汉果茶"
+            },
+            6: {
+                breakfast: "玉米浆+奇亚籽+香蕉",
+                lunch: "清蒸带鱼 + 芹菜炒香干 + 红豆饭",
+                dinner: "丝瓜蛋汤 + 紫甘蓝沙拉",
+                snack: "上午：猕猴桃1个 | 下午：腰果8粒",
+                drink: "温水"
+            },
+            7: {
+                breakfast: "燕麦牛奶粥 + 苹果",
+                lunch: "鸡蛋炒菠菜 + 蒸紫薯 + 糙米饭",
+                dinner: "海带排骨汤（少盐） + 拌三色蔬菜",
+                snack: "上午：橙子1个 | 下午：酸奶100g",
+                drink: "淡普洱茶"
+            }
+        };
+
+        const schedule = [
+            { time: "06:30", action: "起床喝温水300ml", effect: "稀释血液" },
+            { time: "07:00", action: "早餐（按饮食表）", effect: "稳定血压" },
+            { time: "18:00", action: "快走30分钟", effect: "降5-8 mmHg" },
+            { time: "21:00", action: "测血压+记录", effect: "发现夜间高血压" },
+            { time: "22:30", action: "上床睡觉", effect: "修复血管" }
+        ];
+
+        let currentDay = 1;
+        let checklist = {};
+        let bloodPressureRecords = {};
+
+        // 初始化
+        for (let i = 1; i <= 7; i++) {
+            checklist[i] = {
+                breakfast: false,
+                lunch: false,
+                dinner: false,
+                snack: false,
+                exercise: false,
+                bpMorning: false,
+                bpEvening: false
+            };
+            bloodPressureRecords[i] = {
+                morning: null,
+                evening: null
+            };
+        }
+
+        function showDay(day) {
+            currentDay = day;
+            
+            // 更新按钮状态
+            const buttons = document.querySelectorAll('.day-btn');
+            buttons.forEach((btn, index) => {
+                if (index + 1 === day) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+            
+            // 渲染内容
+            renderContent(day);
+        }
+
+        function renderContent(day) {
+            const plan = dietPlan[day];
+            const content = document.getElementById('content');
+            
+            content.innerHTML = `
+                <div class="meal-section">
+                    <h3>早餐 (300-400 kcal)</h3>
+                    <p>${plan.breakfast}</p>
+                </div>
+                
+                <div class="meal-section">
+                    <h3>午餐 (500-600 kcal)</h3>
+                    <p>${plan.lunch}</p>
+                </div>
+                
+                <div class="meal-section">
+                    <h3>晚餐 (500-600 kcal)</h3>
+                    <p>${plan.dinner}</p>
+                </div>
+                
+                <div class="meal-section snack-section">
+                    <h3>加餐 (共200 kcal)</h3>
+                    <p>${plan.snack}</p>
+                </div>
+                
+                <div class="meal-section drink-section">
+                    <h3>饮水/饮品</h3>
+                    <p>${plan.drink}</p>
+                </div>
+                
+                <div class="schedule-section">
+                    <h3>今日作息时间表</h3>
+                    ${schedule.map(item => `
+                        <div class="schedule-item">
+                            <span class="schedule-time">${item.time}</span>
+                            <div class="schedule-action">
+                                <strong>${item.action}</strong>
+                                <div style="font-size: 12px; color: #666; margin-top: 3px;">${item.effect}</div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+                
+                <div class="blood-pressure-section">
+                    <h3>血压记录</h3>
+                    <div class="record-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>时段</label>
+                                <select id="timeSelect" style="padding: 10px; border: 2px solid #bee5eb; border-radius: 8px; font-size: 14px;">
+                                    <option value="morning">早晨（起床后1小时内）</option>
+                                    <option value="evening">晚间（睡前）</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>收缩压 (mmHg)</label>
+                                <input type="number" id="systolic" placeholder="如: 138">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>舒张压 (mmHg)</label>
+                                <input type="number" id="diastolic" placeholder="如: 92">
+                            </div>
+                            <div class="form-group">
+                                <label>心率 (次/分)</label>
+                                <input type="number" id="heartRate" placeholder="如: 78">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>备注（服药/运动/饮食）</label>
+                            <input type="text" id="note" placeholder="如: 服氨氯地平5mg，早餐燕麦">
+                        </div>
+                        <button class="save-btn" onclick="saveRecord()">保存记录</button>
+                    </div>
+                    <div class="records-display" id="recordsDisplay"></div>
+                </div>
+                
+                <div class="progress-section">
+                    <h3>今日完成进度</h3>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressBar">0%</div>
+                    </div>
+                    <div class="checkbox-item ${checklist[day].breakfast ? 'checked' : ''}" onclick="toggleCheck('breakfast')">
+                        <input type="checkbox" ${checklist[day].breakfast ? 'checked' : ''}>
+                        <span>✅ 完成早餐</span>
+                    </div>
+                    <div class="checkbox-item ${checklist[day].lunch ? 'checked' : ''}" onclick="toggleCheck('lunch')">
+                        <input type="checkbox" ${checklist[day].lunch ? 'checked' : ''}>
+                        <span>✅ 完成午餐</span>
+                    </div>
+                    <div class="checkbox-item ${checklist[day].dinner ? 'checked' : ''}" onclick="toggleCheck('dinner')">
+                        <input type="checkbox" ${checklist[day].dinner ? 'checked' : ''}>
+                        <span>✅ 完成晚餐</span>
+                    </div>
+                    <div class="checkbox-item ${checklist[day].snack ? 'checked' : ''}" onclick="toggleCheck('snack')">
+                        <input type="checkbox" ${checklist[day].snack ? 'checked' : ''}>
+                        <span>✅ 完成加餐</span>
+                    </div>
+                    <div class="checkbox-item ${checklist[day].exercise ? 'checked' : ''}" onclick="toggleCheck('exercise')">
+                        <input type="checkbox" ${checklist[day].exercise ? 'checked' : ''}>
+                        <span>✅ 完成运动（快走30分钟）</span>
+                    </div>
+                    <div class="checkbox-item ${checklist[day].bpMorning ? 'checked' : ''}" onclick="toggleCheck('bpMorning')">
+                        <input type="checkbox" ${checklist[day].bpMorning ? 'checked' : ''}>
+                        <span>✅ 完成早晨血压测量</span>
+                    </div>
+                    <div class="checkbox-item ${checklist[day].bpEvening ? 'checked' : ''}" onclick="toggleCheck('bpEvening')">
+                        <input type="checkbox" ${checklist[day].bpEvening ? 'checked' : ''}>
+                        <span>✅ 完成晚间血压测量</span>
+                    </div>
+                </div>
+                
+                <div class="tips-section">
+                    <h3>饮食注意事项</h3>
+                    <p><strong>盐：</strong>所有菜≤1g盐/餐，用葱姜蒜、香菜、柠檬汁调味</p>
+                    <p><strong>油：</strong>每日≤20g（约2勺），用橄榄油或亚麻籽油</p>
+                    <p><strong>禁忌：</strong>腌制品、酱油、味精、火腿肠、方便面、奶油蛋糕</p>
+                    <p><strong>高钾食物：</strong>香蕉、橙子、菠菜、红薯、蘑菇（每天≥4700mg钾）</p>
+                    <p><strong>烹饪方式：</strong>蒸、煮、拌、烤，拒绝油炸</p>
+                </div>
+            `;
+            
+            updateProgress();
+            displayRecords();
+        }
+
+        function toggleCheck(item) {
+            checklist[currentDay][item] = !checklist[currentDay][item];
+            updateProgress();
+            renderContent(currentDay);
+        }
+
+        function updateProgress() {
+            const total = 7;
+            const completed = Object.values(checklist[currentDay]).filter(v => v).length;
+            const percentage = Math.round((completed / total) * 100);
+            
+            const progressBar = document.getElementById('progressBar');
+            if (progressBar) {
+                progressBar.style.width = percentage + '%';
+                progressBar.textContent = percentage + '%';
+            }
+        }
+
+        function saveRecord() {
+            const timeSelect = document.getElementById('timeSelect').value;
+            const systolic = document.getElementById('systolic').value;
+            const diastolic = document.getElementById('diastolic').value;
+            const heartRate = document.getElementById('heartRate').value;
+            const note = document.getElementById('note').value;
+            
+            if (!systolic || !diastolic || !heartRate) {
+                alert('请填写完整的血压和心率数据！');
+                return;
+            }
+            
+            const record = {
+                systolic: parseInt(systolic),
+                diastolic: parseInt(diastolic),
+                heartRate: parseInt(heartRate),
+                note: note,
+                time: new Date().toLocaleString('zh-CN')
+            };
+            
+            bloodPressureRecords[currentDay][timeSelect] = record;
+            
+            // 自动勾选对应的完成项
+            if (timeSelect === 'morning') {
+                checklist[currentDay].bpMorning = true;
+            } else {
+                checklist[currentDay].bpEvening = true;
+            }
+            
+            // 清空输入
+            document.getElementById('systolic').value = '';
+            document.getElementById('diastolic').value = '';
+            document.getElementById('heartRate').value = '';
+            document.getElementById('note').value = '';
+            
+            alert('血压记录已保存！');
+            displayRecords();
+            updateProgress();
+        }
+
+        function displayRecords() {
+            const recordsDiv = document.getElementById('recordsDisplay');
+            if (!recordsDiv) return;
+            
+            const dayRecords = bloodPressureRecords[currentDay];
+            let html = '<h4 style="margin-top: 15px; color: #0c5460;">第' + currentDay + '天记录：</h4>';
+            
+            if (dayRecords.morning) {
+                const r = dayRecords.morning;
+                html += `
+                    <div class="record-item">
+                        <div>
+                            <strong>早晨：</strong> ${r.systolic}/${r.diastolic} mmHg，心率 ${r.heartRate} 次/分
+                            ${r.note ? '<br><small style="color: #666;">' + r.note + '</small>' : ''}
+                        </div>
+                        <small style="color: #999;">${r.time}</small>
+                    </div>
+                `;
+            }
+            
+            if (dayRecords.evening) {
+                const r = dayRecords.evening;
+                html += `
+                    <div class="record-item">
+                        <div>
+                            <strong>晚间：</strong> ${r.systolic}/${r.diastolic} mmHg，心率 ${r.heartRate} 次/分
+                            ${r.note ? '<br><small style="color: #666;">' + r.note + '</small>' : ''}
+                        </div>
+                        <small style="color: #999;">${r.time}</small>
+                    </div>
+                `;
+            }
+            
+            if (!dayRecords.morning && !dayRecords.evening) {
+                html += '<p style="color: #999; font-style: italic;">暂无记录</p>';
+            }
+            
+            recordsDiv.innerHTML = html;
+        }
+
+        // 页面加载时显示第1天
+        window.onload = function() {
+            showDay(1);
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,1685 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>水箱物理验证+能耗分析系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #0f2027 0%, #2c5364 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 36px;
+            margin-bottom: 15px;
+        }
+        .tank-specs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 25px;
+        }
+        .spec-card {
+            background: rgba(255,255,255,0.15);
+            padding: 25px;
+            border-radius: 12px;
+            border: 2px solid rgba(255,255,255,0.4);
+        }
+        .spec-card h3 {
+            margin-bottom: 15px;
+            font-size: 22px;
+        }
+        .spec-card p {
+            font-size: 16px;
+            line-height: 1.8;
+        }
+        .tabs {
+            display: flex;
+            background: #f5f5f5;
+            border-bottom: 3px solid #ddd;
+            flex-wrap: wrap;
+        }
+        .tab {
+            flex: 1;
+            min-width: 180px;
+            padding: 18px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            background: #f5f5f5;
+            font-size: 15px;
+        }
+        .tab:hover {
+            background: #e0e0e0;
+        }
+        .tab.active {
+            background: white;
+            border-bottom: 4px solid #2c5364;
+            color: #2c5364;
+        }
+        .content {
+            padding: 35px;
+        }
+        .section {
+            display: none;
+        }
+        .section.active {
+            display: block;
+        }
+        .dual-panel {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        @media (max-width: 1400px) {
+            .dual-panel {
+                grid-template-columns: 1fr;
+            }
+        }
+        .panel {
+            border: 3px solid #ddd;
+            border-radius: 15px;
+            padding: 30px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        }
+        .panel.small-station {
+            border-color: #28a745;
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+        }
+        .panel.large-station {
+            border-color: #007bff;
+            background: linear-gradient(135deg, #cce5ff 0%, #b8daff 100%);
+        }
+        .panel h3 {
+            text-align: center;
+            margin-bottom: 25px;
+            font-size: 24px;
+            padding: 15px;
+            border-radius: 10px;
+        }
+        .panel.small-station h3 {
+            background: #28a745;
+            color: white;
+        }
+        .panel.large-station h3 {
+            background: #007bff;
+            color: white;
+        }
+        .input-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .input-wrapper {
+            display: flex;
+            flex-direction: column;
+        }
+        .input-wrapper.full-width {
+            grid-column: 1 / -1;
+        }
+        .input-wrapper label {
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #333;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .required {
+            color: #dc3545;
+            font-size: 16px;
+        }
+        .input-wrapper input, .input-wrapper select {
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: all 0.3s;
+        }
+        .input-wrapper input:focus, .input-wrapper select:focus {
+            outline: none;
+            border-color: #2c5364;
+            box-shadow: 0 0 0 3px rgba(44, 83, 100, 0.1);
+        }
+        button {
+            background: linear-gradient(135deg, #0f2027 0%, #2c5364 100%);
+            color: white;
+            padding: 14px 35px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s;
+            margin: 5px;
+        }
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(44, 83, 100, 0.5);
+        }
+        .btn-success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        }
+        .btn-danger {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        }
+        .btn-warning {
+            background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+        }
+        .btn-info {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+        }
+        .btn-purple {
+            background: linear-gradient(135deg, #6f42c1 0%, #5a32a3 100%);
+        }
+        .alert {
+            padding: 18px;
+            border-radius: 10px;
+            margin: 18px 0;
+            font-weight: 500;
+            font-size: 15px;
+            line-height: 1.8;
+        }
+        .alert-warning {
+            background: #fff3cd;
+            border-left: 5px solid #ffc107;
+            color: #856404;
+        }
+        .alert-danger {
+            background: #f8d7da;
+            border-left: 5px solid #dc3545;
+            color: #721c24;
+        }
+        .alert-success {
+            background: #d4edda;
+            border-left: 5px solid #28a745;
+            color: #155724;
+        }
+        .alert-info {
+            background: #d1ecf1;
+            border-left: 5px solid #17a2b8;
+            color: #0c5460;
+        }
+        .result-card {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            padding: 30px;
+            border-radius: 15px;
+            margin: 25px 0;
+            border: 3px solid #4caf50;
+        }
+        .result-card.energy {
+            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+            border-color: #ff9800;
+        }
+        .result-card h3 {
+            color: #2e7d32;
+            margin-bottom: 20px;
+            font-size: 22px;
+        }
+        .result-card.energy h3 {
+            color: #e65100;
+        }
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: white;
+            margin: 12px 0;
+            border-radius: 10px;
+            font-weight: bold;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .result-item span:first-child {
+            color: #555;
+            font-size: 16px;
+        }
+        .result-item span:last-child {
+            color: #2c5364;
+            font-size: 20px;
+        }
+        .formula-box {
+            background: linear-gradient(135deg, #fff9c4 0%, #fff59d 100%);
+            padding: 25px;
+            border-radius: 12px;
+            margin: 25px 0;
+            border: 3px solid #fbc02d;
+        }
+        .formula-box h4 {
+            color: #f57f17;
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+        .formula-box code {
+            background: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            display: block;
+            margin: 10px 0;
+            font-size: 15px;
+            border: 2px solid #fdd835;
+            font-weight: 600;
+            color: #333;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 25px;
+            display: block;
+            max-height: 600px;
+            overflow: auto;
+        }
+        .data-table thead {
+            background: #2c5364;
+            color: white;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .data-table th, .data-table td {
+            padding: 14px;
+            text-align: center;
+            border: 1px solid #ddd;
+            white-space: nowrap;
+        }
+        .data-table tbody tr:hover {
+            background: #f0f0f0;
+        }
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin: 25px 0;
+        }
+        .metric-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            border: 3px solid #e0e0e0;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        .metric-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+        .metric-card h4 {
+            margin-bottom: 15px;
+            font-size: 16px;
+            color: #666;
+        }
+        .metric-value {
+            font-size: 32px;
+            font-weight: bold;
+            margin: 15px 0;
+            color: #2c5364;
+        }
+        .metric-card.highlight {
+            border-color: #28a745;
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+        }
+        .metric-card.highlight .metric-value {
+            color: #28a745;
+        }
+        .metric-card.energy-highlight {
+            border-color: #ff9800;
+            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+        }
+        .metric-card.energy-highlight .metric-value {
+            color: #e65100;
+        }
+        .deviation-badge {
+            display: inline-block;
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        .deviation-good {
+            background: #d4edda;
+            color: #155724;
+        }
+        .deviation-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .deviation-danger {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .delete-btn {
+            background: #dc3545;
+            padding: 6px 14px;
+            font-size: 13px;
+        }
+        .highlight-number {
+            background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+            padding: 3px 8px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .section-divider {
+            border-top: 2px dashed #dee2e6;
+            margin: 25px 0;
+            padding-top: 20px;
+        }
+        .temp-badge {
+            background: #17a2b8;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 13px;
+            margin-left: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔬 水箱物理验证 + 能耗分析系统 v4.0</h1>
+            <p style="font-size: 20px; margin-top: 10px;">
+                <strong>双重验证：</strong>物理容量验证设备准确性 + 单位能耗分析加热效率
+            </p>
+            
+            <div class="tank-specs">
+                <div class="spec-card">
+                    <h3>🟢 40吨小能源站</h3>
+                    <p>📐 底面积：<strong>16 m²</strong></p>
+                    <p>📏 标称容量：40 吨</p>
+                    <p>⚡ 标称补水速度：10.5 吨/时</p>
+                    <p>🔥 加热方式：电加热</p>
+                </div>
+                <div class="spec-card">
+                    <h3>🔵 120吨大能源站</h3>
+                    <p>📐 底面积：<strong>40 m²</strong></p>
+                    <p>📏 标称容量：120 吨</p>
+                    <p>⚡ 标称补水速度：18 吨/时</p>
+                    <p>🔥 加热方式：电加热</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab(0)">📝 数据录入</div>
+            <div class="tab" onclick="switchTab(1)">🔬 物理验证</div>
+            <div class="tab" onclick="switchTab(2)">⚡ 能耗分析</div>
+            <div class="tab" onclick="switchTab(3)">📊 综合报告</div>
+            <div class="tab" onclick="switchTab(4)">📈 历史记录</div>
+        </div>
+
+        <div class="content">
+            <!-- 数据录入 -->
+            <div class="section active">
+                <div class="formula-box">
+                    <h4>🎯 数据采集说明</h4>
+                    <code>1️⃣ 补水前：水温达到预定值时，记录所有数据</code>
+                    <code>2️⃣ 开启补水阀门，开始补水</code>
+                    <code>3️⃣ 补水后：补水完成时，再次记录所有数据</code>
+                    <code>4️⃣ 系统自动计算：实际补水量、真实速度、单位能耗</code>
+                </div>
+
+                <div class="dual-panel">
+                    <!-- 40吨小能源站 -->
+                    <div class="panel small-station">
+                        <h3>🟢 40吨小站（底面积 16m²）</h3>
+                        
+                        <div class="input-wrapper full-width">
+                            <label>
+                                ⏰ 记录时间 <span class="required">*</span> 
+                                <span class="temp-badge" id="smallTimeMode">自动模式</span>
+                                <button type="button" onclick="toggleTimeMode('small')" style="padding: 4px 12px; margin-left: 10px; font-size: 12px; background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);">
+                                    🔄 切换模式
+                                </button>
+                            </label>
+                            <input type="datetime-local" id="smallTime" style="background: #e9ecef;">
+                        </div>
+                        
+                        <div class="section-divider">
+                            <h4 style="color: #28a745; margin-bottom: 15px;">📏 物理测量数据</h4>
+                        </div>
+                        
+                        <div class="input-row">
+                            <div class="input-wrapper">
+                                <label>📏 实际水位高度(cm) <span class="required">*</span></label>
+                                <input type="number" id="smallHeight" step="0.1" placeholder="从底部测量">
+                            </div>
+                            <div class="input-wrapper">
+                                <label>🔢 水表读数(吨) <span class="required">*</span></label>
+                                <input type="number" id="smallMeter" step="0.1" placeholder="累计读数">
+                            </div>
+                        </div>
+
+                        <div class="input-row">
+                            <div class="input-wrapper">
+                                <label>📊 水位传感器(%)</label>
+                                <input type="number" id="smallLevel" step="0.1" placeholder="显示值">
+                            </div>
+                            <div class="input-wrapper">
+                                <label>⚡ 补水速度显示(吨/时)</label>
+                                <input type="number" id="smallSpeed" step="0.1" placeholder="系统显示">
+                            </div>
+                        </div>
+
+                        <div class="section-divider">
+                            <h4 style="color: #ff9800; margin-bottom: 15px;">⚡ 能耗相关数据</h4>
+                        </div>
+
+                        <div class="input-row">
+                            <div class="input-wrapper">
+                                <label>⚡ 电表读数(kWh) <span class="required">*</span></label>
+                                <input type="number" id="smallElectric" step="0.1" placeholder="累计用电量">
+                            </div>
+                            <div class="input-wrapper">
+                                <label>🌡️ 水箱实际温度(℃) <span class="required">*</span></label>
+                                <input type="number" id="smallWaterTemp" step="0.1" placeholder="实测水温">
+                            </div>
+                        </div>
+
+                        <div class="input-row">
+                            <div class="input-wrapper">
+                                <label>🌡️ 环境温度(℃)</label>
+                                <input type="number" id="smallEnvTemp" step="0.1" placeholder="室外温度">
+                            </div>
+                            <div class="input-wrapper">
+                                <label>🔄 记录状态 <span class="required">*</span></label>
+                                <select id="smallStatus">
+                                    <option value="补水前">补水前（水温已达标）</option>
+                                    <option value="补水后">补水后（补水完成）</option>
+                                    <option value="日常巡检">日常巡检</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="input-wrapper full-width">
+                            <label>📝 备注</label>
+                            <input type="text" id="smallNote" placeholder="如：目标水温60℃">
+                        </div>
+
+                        <div style="margin-top: 20px;">
+                            <button class="btn-success" onclick="addRecord('small')">➕ 添加小站记录</button>
+                            <button onclick="updateTime('small')" class="btn-info" id="smallRefreshBtn">🔄 刷新时间</button>
+                            <button onclick="clearForm('small')" style="background: #6c757d;">🗑️ 清空表单</button>
+                        </div>
+                    </div>
+
+                    <!-- 120吨大能源站 -->
+                    <div class="panel large-station">
+                        <h3>🔵 120吨大站（底面积 40m²）</h3>
+                        
+                        <div class="input-wrapper full-width">
+                            <label>
+                                ⏰ 记录时间 <span class="required">*</span> 
+                                <span class="temp-badge" id="largeTimeMode">自动模式</span>
+                                <button type="button" onclick="toggleTimeMode('large')" style="padding: 4px 12px; margin-left: 10px; font-size: 12px; background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);">
+                                    🔄 切换模式
+                                </button>
+                            </label>
+                            <input type="datetime-local" id="largeTime" style="background: #e9ecef;">
+                        </div>
+                        
+                        <div class="section-divider">
+                            <h4 style="color: #007bff; margin-bottom: 15px;">📏 物理测量数据</h4>
+                        </div>
+                        
+                        <div class="input-row">
+                            <div class="input-wrapper">
+                                <label>📏 实际水位高度(cm) <span class="required">*</span></label>
+                                <input type="number" id="largeHeight" step="0.1" placeholder="从底部测量">
+                            </div>
+                            <div class="input-wrapper">
+                                <label>🔢 水表读数(吨) <span class="required">*</span></label>
+                                <input type="number" id="largeMeter" step="0.1" placeholder="累计读数">
+                            </div>
+                        </div>
+
+                        <div class="input-row">
+                            <div class="input-wrapper">
+                                <label>📊 水位传感器(%)</label>
+                                <input type="number" id="largeLevel" step="0.1" placeholder="显示值">
+                            </div>
+                            <div class="input-wrapper">
+                                <label>⚡ 补水速度显示(吨/时)</label>
+                                <input type="number" id="largeSpeed" step="0.1" placeholder="系统显示">
+                            </div>
+                        </div>
+
+                        <div class="section-divider">
+                            <h4 style="color: #ff9800; margin-bottom: 15px;">⚡ 能耗相关数据</h4>
+                        </div>
+
+                        <div class="input-row">
+                            <div class="input-wrapper">
+                                <label>⚡ 电表读数(kWh) <span class="required">*</span></label>
+                                <input type="number" id="largeElectric" step="0.1" placeholder="累计用电量">
+                            </div>
+                            <div class="input-wrapper">
+                                <label>🌡️ 水箱实际温度(℃) <span class="required">*</span></label>
+                                <input type="number" id="largeWaterTemp" step="0.1" placeholder="实测水温">
+                            </div>
+                        </div>
+
+                        <div class="input-row">
+                            <div class="input-wrapper">
+                                <label>🌡️ 环境温度(℃)</label>
+                                <input type="number" id="largeEnvTemp" step="0.1" placeholder="室外温度">
+                            </div>
+                            <div class="input-wrapper">
+                                <label>🔄 记录状态 <span class="required">*</span></label>
+                                <select id="largeStatus">
+                                    <option value="补水前">补水前（水温已达标）</option>
+                                    <option value="补水后">补水后（补水完成）</option>
+                                    <option value="日常巡检">日常巡检</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="input-wrapper full-width">
+                            <label>📝 备注</label>
+                            <input type="text" id="largeNote" placeholder="如：目标水温60℃">
+                        </div>
+
+                        <div style="margin-top: 20px;">
+                            <button class="btn-success" onclick="addRecord('large')">➕ 添加大站记录</button>
+                            <button onclick="updateTime('large')" class="btn-info" id="largeRefreshBtn">🔄 刷新时间</button>
+                            <button onclick="clearForm('large')" style="background: #6c757d;">🗑️ 清空表单</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-warning">
+                    ⚠️ <strong>采集要求：</strong><br>
+                    1. <span class="required">*</span> 标记为必填项<br>
+                    2. 补水前：确保水温已达到预定值再记录<br>
+                    3. 补水后：补水完成立即记录<br>
+                    4. ⏰ <strong>时间模式：</strong><br>
+                       • <strong>自动模式</strong>（默认）：自动获取当前时间，适合实时记录，时间不可修改<br>
+                       • <strong>手动模式</strong>：可以手动修改时间，适合事后补录历史数据<br>
+                       • 点击"🔄 切换模式"按钮可在两种模式间切换
+                </div>
+                
+                <button class="btn-warning" onclick="addInitialData()">📥 导入11月3日测试数据</button>
+            </div>
+
+            <!-- 物理验证 -->
+            <div class="section">
+                <h2>🔬 基于物理容量的设备验证分析</h2>
+                
+                <div class="alert alert-success">
+                    ✅ <strong>分析原理：</strong>以物理容量（高度×底面积）为<span class="highlight-number">绝对真值</span>，校验水表和传感器的准确性
+                </div>
+
+                <h3 style="margin-top: 30px;">🟢 40吨小能源站验证结果</h3>
+                <div class="metric-grid">
+                    <div class="metric-card highlight">
+                        <h4>📏 实际补水容量（真值）</h4>
+                        <div class="metric-value" id="smallPhysicalChange">-</div>
+                        <p>高度变化 × 16m²</p>
+                    </div>
+                    <div class="metric-card">
+                        <h4>🔢 水表计量补水量</h4>
+                        <div class="metric-value" id="smallMeterChange">-</div>
+                        <p>水表读数差值</p>
+                        <span class="deviation-badge" id="smallMeterBadge">-</span>
+                    </div>
+                    <div class="metric-card">
+                        <h4>⚡ 真实补水速度</h4>
+                        <div class="metric-value" id="smallRealSpeed">-</div>
+                        <p>实际容量 ÷ 时间</p>
+                        <span class="deviation-badge" id="smallSpeedBadge">-</span>
+                    </div>
+                    <div class="metric-card">
+                        <h4>📊 传感器水位变化</h4>
+                        <div class="metric-value" id="smallSensorChange">-</div>
+                        <p>水位%显示差值</p>
+                        <span class="deviation-badge" id="smallSensorBadge">-</span>
+                    </div>
+                </div>
+
+                <div class="result-card">
+                    <h3>🟢 40吨小站详细校准数据</h3>
+                    <div class="result-item">
+                        <span>⏱ 补水时长:</span>
+                        <span id="smallDuration">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span>📏 高度变化:</span>
+                        <span id="smallHeightChange">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span>💧 实际补水容量:</span>
+                        <span id="smallActualVolume" style="color: #28a745;">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span>🔢 水表显示补水量:</span>
+                        <span id="smallMeterVolume">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span>❌ 水表偏差:</span>
+                        <span id="smallMeterDeviation">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span>📊 水表误差率:</span>
+                        <span id="smallMeterErrorRate">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span>⚡ 真实补水速度:</span>
+                        <span id="smallTrueSpeed" style="color: #28a745;">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span>⚡ 显示补水速度:</span>
+                        <span id="smallDisplaySpeed">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span>❌ 速度偏差:</span>
+                        <span id="smallSpeedDeviation">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span>📊 传感器误差:</span>
+                        <span id="smallSensorError">-</span>
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 40px;">🔵 120吨大能源站验证结果</h3>
+                <div class="metric-grid">
+                    <div class="metric-card highlight">
+                        <h4>📏 实际补水容量（真值）</h4>
+                        <div class="metric-value" id="largePhysicalChange">-</div>
+                        <p>高度变化 × 40m²</p>
+                    </div>
+                    <div class="metric-card">
+                        <h4>🔢 水表计量补水量</h4>
+                        <div class="metric-value" id="largeMeterChange">-</div>
+                        <p>水表读数差值</p>
+                        <span class="deviation-badge" id="largeMeterBadge">-</span>
+                    </div>
+                    <div class="metric-card">
+                        <h4>⚡ 真实补水速度</h4>
+                        <div class="metric-value" id="largeRealSpeed">-</div>
+                        <p>实际容量 ÷ 时间</p>
+                        <span class="deviation-badge" id="largeSpeedBadge">-</span>
+                    </div>
+                    <div class="metric-card">
+                        <h4>📊 传感器水位变化</h4>
+                        <div class="metric-value" id="largeSensorChange">-</div>
+                        <p>水位%显示差值</p>
+                        <span class="deviation-badge" id="largeSensorBadge">-</span>
+                    </div>
+                </div>
+
+                <div class="result-card">
+                    <h3>🔵 120吨大站详细校准数据</h3>
+                    <div class="result-item">
+                        <span>⏱ 补水时长:</span>
+                        <span id="largeDuration">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span>📏 高度变化:</span>
+                        <span id="largeHeightChange">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span>💧 实际补水容量:</span>
+                        <span id="largeActualVolume" style="color: #28a745;">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span>🔢 水表显示补水量:</span>
+                        <span id="largeMeterVolume">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span>❌ 水表偏差:</span>
+                        <span id="largeMeterDeviation">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span>📊 水表误差率:</span>
+                        <span id="largeMeterErrorRate">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span>⚡ 真实补水速度:</span>
+                        <span id="largeTrueSpeed" style="color: #28a745;">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span>⚡ 显示补水速度:</span>
+                        <span id="largeDisplaySpeed">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span>❌ 速度偏差:</span>
+                        <span id="largeSpeedDeviation">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span>📊 传感器误差:</span>
+                        <span id="largeSensorError">-</span>
+                    </div>
+                </div>
+
+                <button onclick="analyzePhysical()">🔍 开始物理验证分析</button>
+            </div>
+
+            <!-- 能耗分析 -->
+            <div class="section">
+                <h2>⚡ 单位能耗分析</h2>
+                
+                <div class="formula-box">
+                    <h4>🔥 单位能耗计算公式</h4>
+                    <code><strong>单位能耗(kWh/吨)</strong> = (补水后电表读数 - 补水前电表读数) ÷ 实际补水容量(吨)</code>
+                    <code><strong>理论热量(kWh)</strong> = 实际补水量(吨) × 温差(℃) × 1.163 kWh/(吨·℃)</code>
+                    <code><strong>加热效率(%)</strong> = 理论热量 ÷ 实际耗电量 × 100%</code>
+                </div>
+
+                <h3 style="margin-top: 30px;">🟢 40吨小能源站能耗分析</h3>
+                <div class="metric-grid">
+                    <div class="metric-card energy-highlight">
+                        <h4>⚡ 单位能耗</h4>
+                        <div class="metric-value" id="smallUnitEnergy">-</div>
+                        <p>kWh/吨</p>
+                    </div>
+                    <div class="metric-card">
+                        <h4>🔌 实际耗电量</h4>
+                        <div class="metric-value" id="smallEnergyUse">-</div>
+                        <p>kWh</p>
+                    </div>
+                    <div class="metric-card">
+                        <h4>🌡️ 加热温差</h4>
+                        <div class="metric-value" id="smallTempDiff">-</div>
+                        <p>℃</p>
+                    </div>
+                    <div class="metric-card">
+                        <h4>📈 加热效率</h4>
+                        <div class="metric-value" id="smallEfficiency">-</div>
+                        <p>%</p>
+                        <span class="deviation-badge" id="smallEffBadge">-</span>
+                    </div>
+                </div>
+
+                <div class="result-card energy">
+                    <h3>🟢 40吨小站能耗详细数据</h3>
+                    <div class="result-item">
+                        <span>💧 实际补水量:</span>
+                        <span id="smallEnergyVolume">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span>⚡ 实际耗电量:</span>
+                        <span id="smallActualEnergy" style="color: #e65100;">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span>🔥 单位能耗:</span>
+                        <span id="smallUnitEnergyDetail" style="color: #e65100;">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span>🌡️ 补水前温度:</span>
+                        <span id="smallTempBefore">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span>🌡️ 补水后温度:</span>
+                        <span id="smallTempAfter">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span>🌡️ 加热温差:</span>
+                        <span id="smallTempDiffDetail">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span>🧮 理论需热量:</span>
+                        <span id="smallTheoreticalHeat">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span>📊 加热效率:</span>
+                        <span id="smallEfficiencyDetail">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span>💰 本次电费(0.6元/kWh):</span>
+                        <span id="smallCost">-</span>
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 40px;">🔵 120吨大能源站能耗分析</h3>
+                <div class="metric-grid">
+                    <div class="metric-card energy-highlight">
+                        <h4>⚡ 单位能耗</h4>
+                        <div class="metric-value" id="largeUnitEnergy">-</div>
+                        <p>kWh/吨</p>
+                    </div>
+                    <div class="metric-card">
+                        <h4>🔌 实际耗电量</h4>
+                        <div class="metric-value" id="largeEnergyUse">-</div>
+                        <p>kWh</p>
+                    </div>
+                    <div class="metric-card">
+                        <h4>🌡️ 加热温差</h4>
+                        <div class="metric-value" id="largeTempDiff">-</div>
+                        <p>℃</p>
+                    </div>
+                    <div class="metric-card">
+                        <h4>📈 加热效率</h4>
+                        <div class="metric-value" id="largeEfficiency">-</div>
+                        <p>%</p>
+                        <span class="deviation-badge" id="largeEffBadge">-</span>
+                    </div>
+                </div>
+
+                <div class="result-card energy">
+                    <h3>🔵 120吨大站能耗详细数据</h3>
+                    <div class="result-item">
+                        <span>💧 实际补水量:</span>
+                        <span id="largeEnergyVolume">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span>⚡ 实际耗电量:</span>
+                        <span id="largeActualEnergy" style="color: #e65100;">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span>🔥 单位能耗:</span>
+                        <span id="largeUnitEnergyDetail" style="color: #e65100;">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span>🌡️ 补水前温度:</span>
+                        <span id="largeTempBefore">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span>🌡️ 补水后温度:</span>
+                        <span id="largeTempAfter">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span>🌡️ 加热温差:</span>
+                        <span id="largeTempDiffDetail">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span>🧮 理论需热量:</span>
+                        <span id="largeTheoreticalHeat">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span>📊 加热效率:</span>
+                        <span id="largeEfficiencyDetail">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span>💰 本次电费(0.6元/kWh):</span>
+                        <span id="largeCost">-</span>
+                    </div>
+                </div>
+
+                <button onclick="analyzeEnergy()" class="btn-purple">⚡ 计算单位能耗</button>
+                <button onclick="compareEnergy()" class="btn-warning">⚖️ 双系统能耗对比</button>
+            </div>
+
+            <!-- 综合报告 -->
+            <div class="section">
+                <h2>📊 综合验证报告</h2>
+                
+                <div class="alert alert-info">
+                    💡 <strong>报告说明：</strong>整合物理验证和能耗分析，提供完整的设备性能评估
+                </div>
+
+                <div class="result-card">
+                    <h3>📋 设备准确性评估</h3>
+                    <table class="data-table" style="max-height: none;">
+                        <thead>
+                            <tr>
+                                <th>系统</th>
+                                <th>水表误差率</th>
+                                <th>传感器误差</th>
+                                <th>速度误差</th>
+                                <th>准确性评级</th>
+                            </tr>
+                        </thead>
+                        <tbody id="accuracyReport">
+                            <tr><td colspan="5" style="text-align: center; color: #999;">暂无分析数据</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="result-card energy">
+                    <h3>⚡ 能耗效率评估</h3>
+                    <table class="data-table" style="max-height: none;">
+                        <thead>
+                            <tr>
+                                <th>系统</th>
+                                <th>单位能耗(kWh/吨)</th>
+                                <th>加热效率(%)</th>
+                                <th>平均温差(℃)</th>
+                                <th>能效评级</th>
+                            </tr>
+                        </thead>
+                        <tbody id="energyReport">
+                            <tr><td colspan="5" style="text-align: center; color: #999;">暂无分析数据</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="result-card">
+                    <h3>🎯 统计基础建议</h3>
+                    <div class="result-item">
+                        <span>容量统计基准:</span>
+                        <span style="color: #28a745;">实际高度 × 底面积 ⭐⭐⭐⭐⭐</span>
+                    </div>
+                    <div class="result-item">
+                        <span>补水量统计:</span>
+                        <span style="color: #28a745;">物理容量（绝对真值）</span>
+                    </div>
+                    <div class="result-item">
+                        <span>补水速度统计:</span>
+                        <span style="color: #28a745;">实际容量 ÷ 时间</span>
+                    </div>
+                    <div class="result-item">
+                        <span>能耗统计基准:</span>
+                        <span style="color: #e65100;">电表差值 ÷ 物理容量</span>
+                    </div>
+                    <div class="result-item">
+                        <span>水表使用建议:</span>
+                        <span id="meterAdvice">了解误差后可辅助参考</span>
+                    </div>
+                </div>
+
+                <button onclick="generateFullReport()" class="btn-info">📄 生成完整报告</button>
+                <button onclick="exportReport()" class="btn-success">📥 导出报告</button>
+            </div>
+
+            <!-- 历史记录 -->
+            <div class="section">
+                <h2>📈 历史监测记录</h2>
+                <div style="margin-bottom: 20px;">
+                    <button onclick="filterRecords('all')" class="btn-success">📊 显示全部</button>
+                    <button onclick="filterRecords('small')">🟢 仅小站</button>
+                    <button onclick="filterRecords('large')">🔵 仅大站</button>
+                    <button onclick="exportData()" class="btn-info">📥 导出CSV</button>
+                    <button onclick="document.getElementById('csvFileInput').click()" class="btn-warning">📤 导入CSV</button>
+                    <button onclick="clearHistory()" class="btn-danger">🗑️ 清空记录</button>
+                    <input type="file" id="csvFileInput" accept=".csv" style="display: none;" onchange="importCSV(event)">
+                </div>
+
+                <div class="alert alert-info" id="recordStats">
+                    📊 统计：小站记录 <strong>0</strong> 条 | 大站记录 <strong>0</strong> 条 | 总计 <strong>0</strong> 条
+                </div>
+
+                <div class="alert alert-warning">
+                    💡 <strong>CSV导入说明：</strong><br>
+                    1. 先点击"📥 导出CSV"获取标准格式模板<br>
+                    2. 在Excel或文本编辑器中修正数据<br>
+                    3. 保存为CSV格式（UTF-8编码）<br>
+                    4. 点击"📤 导入CSV"选择修正后的文件<br>
+                    5. 系统会自动识别系统类型并导入数据<br>
+                    6. <strong>⚠️ 导入会覆盖现有数据，请先备份！</strong>
+                </div>
+
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>系统</th>
+                            <th>记录时间</th>
+                            <th>高度(cm)</th>
+                            <th>水表(吨)</th>
+                            <th>电表(kWh)</th>
+                            <th>水温(℃)</th>
+                            <th>环境温度</th>
+                            <th>水位%</th>
+                            <th>状态</th>
+                            <th>备注</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyBody">
+                        <tr><td colspan="11" style="text-align: center; color: #999;">暂无历史数据</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 系统配置
+        const SYSTEMS = {
+            small: {
+                name: '40吨小站',
+                area: 16,
+                nominalCapacity: 40,
+                nominalSpeed: 10.5
+            },
+            large: {
+                name: '120吨大站',
+                area: 40,
+                nominalCapacity: 120,
+                nominalSpeed: 18
+            }
+        };
+
+        let smallRecords = [];
+        let largeRecords = [];
+        let currentFilter = 'all';
+        
+        // 时间模式管理
+        let timeMode = {
+            small: 'auto',  // 'auto' 或 'manual'
+            large: 'auto'
+        };
+
+        // 初始化
+        window.onload = function() {
+            loadData();
+            updateTime('small');
+            updateTime('large');
+            updateDisplay();
+            // 初始化时间模式
+            setTimeMode('small', 'auto');
+            setTimeMode('large', 'auto');
+        };
+
+        // 切换时间模式
+        function toggleTimeMode(system) {
+            const currentMode = timeMode[system];
+            const newMode = currentMode === 'auto' ? 'manual' : 'auto';
+            setTimeMode(system, newMode);
+            
+            const modeText = newMode === 'auto' ? '已切换到自动模式（实时记录）' : '已切换到手动模式（可补录历史数据）';
+            alert(`⏰ ${modeText}`);
+        }
+
+        // 设置时间模式
+        function setTimeMode(system, mode) {
+            timeMode[system] = mode;
+            const timeInput = document.getElementById(system + 'Time');
+            const modeBadge = document.getElementById(system + 'TimeMode');
+            const refreshBtn = document.getElementById(system + 'RefreshBtn');
+            
+            if (mode === 'auto') {
+                // 自动模式：只读，灰色背景，自动刷新当前时间
+                timeInput.readOnly = true;
+                timeInput.style.background = '#e9ecef';
+                timeInput.style.cursor = 'not-allowed';
+                modeBadge.textContent = '自动模式';
+                modeBadge.style.background = '#17a2b8';
+                refreshBtn.style.display = 'inline-block';
+                updateTime(system);
+            } else {
+                // 手动模式：可编辑，白色背景
+                timeInput.readOnly = false;
+                timeInput.style.background = 'white';
+                timeInput.style.cursor = 'text';
+                modeBadge.textContent = '手动模式';
+                modeBadge.style.background = '#ff9800';
+                refreshBtn.style.display = 'none';
+            }
+        }
+
+        // 更新当前时间
+        function updateTime(system) {
+            // 只有在自动模式下才更新时间
+            if (timeMode[system] === 'auto') {
+                const now = new Date();
+                const localTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+                document.getElementById(system + 'Time').value = localTime;
+            }
+        }
+
+        // 切换标签页
+        function switchTab(index) {
+            const tabs = document.querySelectorAll('.tab');
+            const sections = document.querySelectorAll('.section');
+            
+            tabs.forEach((tab, i) => {
+                tab.classList.toggle('active', i === index);
+            });
+            
+            sections.forEach((section, i) => {
+                section.classList.toggle('active', i === index);
+            });
+        }
+
+        // 添加记录
+        function addRecord(system) {
+            const record = {
+                system: system,
+                time: document.getElementById(system + 'Time').value,
+                height: parseFloat(document.getElementById(system + 'Height').value),
+                meter: parseFloat(document.getElementById(system + 'Meter').value),
+                electric: parseFloat(document.getElementById(system + 'Electric').value),
+                waterTemp: parseFloat(document.getElementById(system + 'WaterTemp').value),
+                envTemp: parseFloat(document.getElementById(system + 'EnvTemp').value) || null,
+                level: parseFloat(document.getElementById(system + 'Level').value) || null,
+                speed: parseFloat(document.getElementById(system + 'Speed').value) || null,
+                status: document.getElementById(system + 'Status').value,
+                note: document.getElementById(system + 'Note').value || ''
+            };
+
+            // 验证必填项
+            if (!record.time || isNaN(record.height) || isNaN(record.meter) || isNaN(record.electric) || isNaN(record.waterTemp)) {
+                alert('❌ 请填写所有必填项（时间、高度、水表、电表、水温）！');
+                return;
+            }
+
+            if (system === 'small') {
+                smallRecords.push(record);
+            } else {
+                largeRecords.push(record);
+            }
+
+            saveData();
+            updateHistoryTable();
+            clearForm(system);
+            
+            const systemName = system === 'small' ? '🟢 40吨小站' : '🔵 120吨大站';
+            alert(`✅ ${systemName}记录添加成功！\n当前共有 ${system === 'small' ? smallRecords.length : largeRecords.length} 条记录。`);
+        }
+
+        // 清空表单
+        function clearForm(system) {
+            document.getElementById(system + 'Height').value = '';
+            document.getElementById(system + 'Meter').value = '';
+            document.getElementById(system + 'Electric').value = '';
+            document.getElementById(system + 'WaterTemp').value = '';
+            document.getElementById(system + 'EnvTemp').value = '';
+            document.getElementById(system + 'Level').value = '';
+            document.getElementById(system + 'Speed').value = '';
+            document.getElementById(system + 'Note').value = '';
+            // 清空表单时，如果是自动模式则更新时间
+            if (timeMode[system] === 'auto') {
+                updateTime(system);
+            }
+        }
+
+        // 物理验证分析
+        function analyzePhysical() {
+            analyzeSystemPhysical('small');
+            analyzeSystemPhysical('large');
+        }
+
+        function analyzeSystemPhysical(system) {
+            const records = system === 'small' ? smallRecords : largeRecords;
+            const config = SYSTEMS[system];
+            
+            if (records.length < 2) {
+                alert(`⚠️ ${config.name}至少需要2条记录才能分析！`);
+                return;
+            }
+
+            const beforeRecords = records.filter(r => r.status === '补水前');
+            const afterRecords = records.filter(r => r.status === '补水后');
+
+            if (beforeRecords.length === 0 || afterRecords.length === 0) {
+                alert(`⚠️ ${config.name}需要至少一条"补水前"和一条"补水后"记录！`);
+                return;
+            }
+
+            const before = beforeRecords[beforeRecords.length - 1];
+            const after = afterRecords[afterRecords.length - 1];
+
+            // 核心计算
+            const heightChange = (after.height - before.height) / 100; // 米
+            const actualVolume = heightChange * config.area; // 吨
+            const meterChange = after.meter - before.meter;
+            const levelChange = (after.level || 0) - (before.level || 0);
+            
+            const timeDiff = (new Date(after.time) - new Date(before.time)) / 3600000; // 小时
+            const realSpeed = actualVolume / timeDiff;
+            
+            const meterDeviation = meterChange - actualVolume;
+            const meterErrorRate = Math.abs(meterDeviation / actualVolume * 100);
+            
+            const speedDeviation = (after.speed || config.nominalSpeed) - realSpeed;
+            
+            const actualLevelChange = (actualVolume / config.nominalCapacity) * 100;
+            const sensorError = Math.abs(levelChange - actualLevelChange);
+
+            // 更新显示
+            const prefix = system;
+            
+            document.getElementById(prefix + 'PhysicalChange').textContent = actualVolume.toFixed(2) + ' 吨';
+            document.getElementById(prefix + 'MeterChange').textContent = meterChange.toFixed(2) + ' 吨';
+            document.getElementById(prefix + 'RealSpeed').textContent = realSpeed.toFixed(2) + ' 吨/时';
+            document.getElementById(prefix + 'SensorChange').textContent = levelChange.toFixed(1) + '%';
+            
+            document.getElementById(prefix + 'Duration').textContent = (timeDiff * 60).toFixed(0) + ' 分钟';
+            document.getElementById(prefix + 'HeightChange').textContent = (heightChange * 100).toFixed(1) + ' cm';
+            document.getElementById(prefix + 'ActualVolume').textContent = actualVolume.toFixed(2) + ' 吨';
+            document.getElementById(prefix + 'MeterVolume').textContent = meterChange.toFixed(2) + ' 吨';
+            document.getElementById(prefix + 'MeterDeviation').textContent = meterDeviation.toFixed(2) + ' 吨';
+            document.getElementById(prefix + 'MeterErrorRate').textContent = meterErrorRate.toFixed(2) + '%';
+            document.getElementById(prefix + 'TrueSpeed').textContent = realSpeed.toFixed(2) + ' 吨/时';
+            document.getElementById(prefix + 'DisplaySpeed').textContent = (after.speed || config.nominalSpeed).toFixed(1) + ' 吨/时';
+            document.getElementById(prefix + 'SpeedDeviation').textContent = speedDeviation.toFixed(2) + ' 吨/时';
+            document.getElementById(prefix + 'SensorError').textContent = sensorError.toFixed(2) + '%';
+            
+            setBadge(prefix + 'MeterBadge', meterErrorRate, '误差' + meterErrorRate.toFixed(1) + '%');
+            setBadge(prefix + 'SpeedBadge', Math.abs(speedDeviation/realSpeed*100), '偏差' + Math.abs(speedDeviation).toFixed(1));
+            setBadge(prefix + 'SensorBadge', sensorError, '误差' + sensorError.toFixed(1) + '%');
+        }
+
+        // 能耗分析
+        function analyzeEnergy() {
+            analyzeSystemEnergy('small');
+            analyzeSystemEnergy('large');
+        }
+
+        function analyzeSystemEnergy(system) {
+            const records = system === 'small' ? smallRecords : largeRecords;
+            const config = SYSTEMS[system];
+            
+            if (records.length < 2) {
+                alert(`⚠️ ${config.name}至少需要2条记录才能分析能耗！`);
+                return;
+            }
+
+            const beforeRecords = records.filter(r => r.status === '补水前');
+            const afterRecords = records.filter(r => r.status === '补水后');
+
+            if (beforeRecords.length === 0 || afterRecords.length === 0) {
+                alert(`⚠️ ${config.name}需要"补水前"和"补水后"记录！`);
+                return;
+            }
+
+            const before = beforeRecords[beforeRecords.length - 1];
+            const after = afterRecords[afterRecords.length - 1];
+
+            // 物理容量计算
+            const heightChange = (after.height - before.height) / 100;
+            const actualVolume = heightChange * config.area; // 实际补水量（吨）
+            
+            // 能耗计算
+            const energyUse = after.electric - before.electric; // 实际耗电量（kWh）
+            const unitEnergy = energyUse / actualVolume; // 单位能耗（kWh/吨）
+            
+            // 温差计算
+            const tempDiff = after.waterTemp - before.waterTemp; // 加热温差
+            
+            // 理论热量计算：Q = m × c × ΔT
+            // 水的比热容 = 4.2 kJ/(kg·℃) = 1.163 kWh/(吨·℃)
+            const theoreticalHeat = actualVolume * tempDiff * 1.163; // kWh
+            
+            // 加热效率
+            const efficiency = (theoreticalHeat / energyUse) * 100;
+            
+            // 电费计算（假设0.6元/kWh）
+            const cost = energyUse * 0.6;
+
+            // 更新显示
+            const prefix = system;
+            
+            document.getElementById(prefix + 'UnitEnergy').textContent = unitEnergy.toFixed(2);
+            document.getElementById(prefix + 'EnergyUse').textContent = energyUse.toFixed(1);
+            document.getElementById(prefix + 'TempDiff').textContent = tempDiff.toFixed(1);
+            document.getElementById(prefix + 'Efficiency').textContent = efficiency.toFixed(1);
+            
+            document.getElementById(prefix + 'EnergyVolume').textContent = actualVolume.toFixed(2) + ' 吨';
+            document.getElementById(prefix + 'ActualEnergy').textContent = energyUse.toFixed(1) + ' kWh';
+            document.getElementById(prefix + 'UnitEnergyDetail').textContent = unitEnergy.toFixed(2) + ' kWh/吨';
+            document.getElementById(prefix + 'TempBefore').textContent = before.waterTemp.toFixed(1) + ' ℃';
+            document.getElementById(prefix + 'TempAfter').textContent = after.waterTemp.toFixed(1) + ' ℃';
+            document.getElementById(prefix + 'TempDiffDetail').textContent = tempDiff.toFixed(1) + ' ℃';
+            document.getElementById(prefix + 'TheoreticalHeat').textContent = theoreticalHeat.toFixed(1) + ' kWh';
+            document.getElementById(prefix + 'EfficiencyDetail').textContent = efficiency.toFixed(1) + '%';
+            document.getElementById(prefix + 'Cost').textContent = cost.toFixed(2) + ' 元';
+            
+            // 效率徽章
+            let effBadge = document.getElementById(prefix + 'EffBadge');
+            effBadge.textContent = efficiency.toFixed(1) + '%';
+            if (efficiency >= 90) {
+                effBadge.className = 'deviation-badge deviation-good';
+            } else if (efficiency >= 80) {
+                effBadge.className = 'deviation-badge deviation-warning';
+            } else {
+                effBadge.className = 'deviation-badge deviation-danger';
+            }
+        }
+
+        function compareEnergy() {
+            if (smallRecords.length < 2 || largeRecords.length < 2) {
+                alert('⚠️ 两个系统都需要至少2条记录才能对比！');
+                return;
+            }
+
+            analyzeEnergy();
+            
+            const smallUnit = document.getElementById('smallUnitEnergy').textContent;
+            const largeUnit = document.getElementById('largeUnitEnergy').textContent;
+            const smallEff = document.getElementById('smallEfficiency').textContent;
+            const largeEff = document.getElementById('largeEfficiency').textContent;
+
+            alert(`⚖️ 双系统能耗对比分析\n\n` +
+                  `🟢 40吨小站：\n` +
+                  `   单位能耗: ${smallUnit} kWh/吨\n` +
+                  `   加热效率: ${smallEff}%\n\n` +
+                  `🔵 120吨大站：\n` +
+                  `   单位能耗: ${largeUnit} kWh/吨\n` +
+                  `   加热效率: ${largeEff}%\n\n` +
+                  `💡 建议：效率高于90%为优秀，80-90%为良好`);
+        }
+
+        // 辅助函数
+        function setBadge(id, errorRate, text) {
+            const badge = document.getElementById(id);
+            badge.textContent = text;
+            badge.className = 'deviation-badge ' + 
+                (errorRate < 2 ? 'deviation-good' : 
+                 errorRate < 5 ? 'deviation-warning' : 'deviation-danger');
+        }
+
+        // 历史记录管理
+        function updateHistoryTable() {
+            const tbody = document.getElementById('historyBody');
+            let records = [];
+
+            if (currentFilter === 'all') {
+                records = [...smallRecords.map(r => ({...r, system: 'small'})), 
+                          ...largeRecords.map(r => ({...r, system: 'large'}))];
+            } else if (currentFilter === 'small') {
+                records = smallRecords.map(r => ({...r, system: 'small'}));
+            } else {
+                records = largeRecords.map(r => ({...r, system: 'large'}));
+            }
+
+            records.sort((a, b) => new Date(b.time) - new Date(a.time));
+
+            if (records.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="11" style="text-align: center; color: #999;">暂无历史数据</td></tr>';
+            } else {
+                tbody.innerHTML = records.map((r, i) => {
+                    const systemName = r.system === 'small' ? '🟢 40吨小站' : '🔵 120吨大站';
+                    return `
+                        <tr>
+                            <td><strong>${systemName}</strong></td>
+                            <td>${new Date(r.time).toLocaleString('zh-CN')}</td>
+                            <td><strong>${r.height.toFixed(1)}</strong></td>
+                            <td>${r.meter.toFixed(1)}</td>
+                            <td><strong style="color: #e65100;">${r.electric.toFixed(1)}</strong></td>
+                            <td><strong style="color: #17a2b8;">${r.waterTemp.toFixed(1)}℃</strong></td>
+                            <td>${r.envTemp ? r.envTemp.toFixed(1) + '℃' : '-'}</td>
+                            <td>${r.level ? r.level.toFixed(1) + '%' : '-'}</td>
+                            <td><strong>${r.status}</strong></td>
+                            <td>${r.note || '-'}</td>
+                            <td><button class="delete-btn" onclick="deleteRecord('${r.system}', ${getOriginalIndex(r)})">删除</button></td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+
+            document.getElementById('recordStats').innerHTML = 
+                `📊 统计：小站记录 <strong>${smallRecords.length}</strong> 条 | 大站记录 <strong>${largeRecords.length}</strong> 条 | 总计 <strong>${smallRecords.length + largeRecords.length}</strong> 条`;
+        }
+
+        function getOriginalIndex(record) {
+            const records = record.system === 'small' ? smallRecords : largeRecords;
+            return records.findIndex(r => r.time === record.time && r.height === record.height);
+        }
+
+        function deleteRecord(system, index) {
+            if (!confirm('⚠️ 确定删除这条记录吗？')) return;
+            
+            if (system === 'small') {
+                smallRecords.splice(index, 1);
+            } else {
+                largeRecords.splice(index, 1);
+            }
+            
+            saveData();
+            updateHistoryTable();
+        }
+
+        function filterRecords(filter) {
+            currentFilter = filter;
+            updateHistoryTable();
+        }
+
+        // 生成完整报告
+        function generateFullReport() {
+            if (smallRecords.length < 2 && largeRecords.length < 2) {
+                alert('⚠️ 数据不足，无法生成报告！');
+                return;
+            }
+
+            let report = '╔════════════════════════════════════════════╗\n';
+            report += '║   水箱物理验证 + 能耗分析综合报告         ║\n';
+            report += '╚════════════════════════════════════════════╝\n\n';
+            report += `生成时间：${new Date().toLocaleString('zh-CN')}\n\n`;
+            
+            // 分析小站
+            if (smallRecords.length >= 2) {
+                const beforeSmall = smallRecords.filter(r => r.status === '补水前').pop();
+                const afterSmall = smallRecords.filter(r => r.status === '补水后').pop();
+                
+                if (beforeSmall && afterSmall) {
+                    const heightChange = (afterSmall.height - beforeSmall.height) / 100;
+                    const actualVolume = heightChange * 16;
+                    const meterChange = afterSmall.meter - beforeSmall.meter;
+                    const meterError = Math.abs((meterChange - actualVolume) / actualVolume * 100);
+                    
+                    const energyUse = afterSmall.electric - beforeSmall.electric;
+                    const unitEnergy = energyUse / actualVolume;
+                    const tempDiff = afterSmall.waterTemp - beforeSmall.waterTemp;
+                    const theoreticalHeat = actualVolume * tempDiff * 1.163;
+                    const efficiency = (theoreticalHeat / energyUse) * 100;
+                    
+                    report += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
+                    report += '🟢 40吨小能源站分析结果\n';
+                    report += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n';
+                    
+                    report += '【物理验证】\n';
+                    report += `  • 实际补水容量：${actualVolume.toFixed(2)} 吨\n`;
+                    report += `  • 水表显示补水量：${meterChange.toFixed(2)} 吨\n`;
+                    report += `  • 水表误差率：${meterError.toFixed(2)}%\n`;
+                    report += `  • 设备评级：${meterError < 2 ? '✅ 优秀' : meterError < 5 ? '⚠️ 良好' : '❌ 需要校准'}\n\n`;
+                    
+                    report += '【能耗分析】\n';
+                    report += `  • 实际耗电量：${energyUse.toFixed(1)} kWh\n`;
+                    report += `  • 单位能耗：${unitEnergy.toFixed(2)} kWh/吨\n`;
+                    report += `  • 加热温差：${tempDiff.toFixed(1)}℃\n`;
+                    report += `  • 加热效率：${efficiency.toFixed(1)}%\n`;
+                    report += `  • 效率评级：${efficiency >= 90 ? '✅ 优秀' : efficiency >= 80 ? '⚠️ 良好' : '❌ 需要优化'}\n`;
+                    report += `  • 本次电费：${(energyUse * 0.6).toFixed(2)} 元\n\n`;
+                }
+            }
+            
+            // 分析大站
+            if (largeRecords.length >= 2) {
+                const beforeLarge = largeRecords.filter(r => r.status === '补水前').pop();
+                const afterLarge = largeRecords.filter(r => r.status === '补水后').pop();
+                
+                if (beforeLarge && afterLarge) {
+                    const heightChange = (afterLarge.height - beforeLarge.height) / 100;
+                    const actualVolume = heightChange * 40;
+                    const meterChange = afterLarge.meter - beforeLarge.meter;
+                    const meterError = Math.abs((meterChange - actualVolume) / actualVolume * 100);
+                    
+                    const energyUse = afterLarge.electric - beforeLarge.electric;
+                    const unitEnergy = energyUse / actualVolume;
+                    const tempDiff = afterLarge.waterTemp - beforeLarge.waterTemp;
+                    const theoreticalHeat = actualVolume * tempDiff * 1.163;
+                    const efficiency = (theoreticalHeat / energyUse) * 100;
+                    
+                    report += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
+                    report += '🔵 120吨大能源站分析结果\n';
+                    report += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n';
+                    
+                    report += '【物理验证】\n';
+                    report += `  • 实际补水容量：${actualVolume.toFixed(2)} 吨\n`;
+                    report += `  • 水表显示补水量：${meterChange.toFixed(2)} 吨\n`;
+                    report += `  • 水表误差率：${meterError.toFixed(2)}%\n`;
+                    report += `  • 设备评级：${meterError < 2 ? '✅ 优秀' : meterError < 5 ? '⚠️ 良好' : '❌ 需要校准'}\n\n`;
+                    
+                    report += '【能耗分析】\n';
+                    report += `  • 实际耗电量：${energyUse.toFixed(1)} kWh\n`;
+                    report += `  • 单位能耗：${unitEnergy.toFixed(2)} kWh/吨\n`;
+                    report += `  • 加热温差：${tempDiff.toFixed(1)}℃\n`;
+                    report += `  • 加热效率：${efficiency.toFixed(1)}%\n`;
+                    report += `  • 效率评级：${efficiency >= 90 ? '✅ 优秀' : efficiency >= 80 ? '⚠️ 良好' : '❌ 需要优化'}\n`;
+                    report += `  • 本次电费：${(energyUse * 0.6).toFixed(2)} 元\n\n`;
+                }
+            }
+            
+            report += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
+            report += '🎯 统计基础建议\n';
+            report += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n';
+            report += '✅ 容量统计：实际高度 × 底面积（物理真值）\n';
+            report += '✅ 补水量统计：以物理容量为准\n';
+            report += '✅ 补水速度：实际容量 ÷ 时间\n';
+            report += '✅ 能耗统计：电表差值 ÷ 物理容量\n';
+            report += '⚠️ 水表数据：了解误差后可辅助参考\n';
+            
+            alert(report);
+        }
+
+        function exportReport() {
+            alert('📄 报告导出功能开发中...\n建议先点击"生成完整报告"复制文本内容。');
+        }
+
+        // 导出数据
+        function exportData() {
+            const allRecords = [
+                ...smallRecords.map(r => ({...r, system: '40吨小站'})),
+                ...largeRecords.map(r => ({...r, system: '120吨大站'}))
+            ];
+
+            if (allRecords.length === 0) {
+                alert('⚠️ 暂无数据可导出！');
+                return;
+            }
+
+            allRecords.sort((a, b) => new Date(a.time) - new Date(b.time));
+
+            let csv = '系统,记录时间,实际高度(cm),水表读数(吨),电表读数(kWh),水温(℃),环境温度(℃),水位显示(%),补水速度显示(吨/时),状态,备注\n';
+            allRecords.forEach(r => {
+                csv += `${r.system},${r.time},${r.height},${r.meter},${r.electric},${r.waterTemp},${r.envTemp || ''},${r.level || ''},${r.speed || ''},${r.status},"${r.note || ''}"\n`;
+            });
+
+            const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `水箱综合监测数据_${new Date().toISOString().slice(0,10)}.csv`;
+            link.click();
+
+            alert('✅ 数据导出成功！');
+        }
+
+        function clearHistory() {
+            if (!confirm('⚠️ 确定要清空所有历史记录吗？此操作不可恢复！')) return;
+
+            smallRecords = [];
+            largeRecords = [];
+            saveData();
+            updateHistoryTable();
+            alert('✅ 历史记录已清空');
+        }
+
+        // 导入初始数据
+        function addInitialData() {
+            if (!confirm('导入11月3日的完整测试数据（含能耗数据）？')) return;
+
+            // 40吨小站数据
+            smallRecords.push({
+                system: 'small',
+                time: '2024-11-03T09:32',
+                height: 69,
+                meter: 989.7,
+                electric: 1500.0,
+                waterTemp: 58.0,
+                envTemp: 12.0,
+                level: 16,
+                speed: 10.5,
+                status: '补水前',
+                note: '11月3日测试-补水前'
+            });
+
+            smallRecords.push({
+                system: 'small',
+                time: '2024-11-03T10:12',
+                height: 122,
+                meter: 1001,
+                electric: 1520.5,
+                waterTemp: 60.0,
+                envTemp: 12.0,
+                level: 45,
+                speed: 10.5,
+                status: '补水后',
+                note: '11月3日测试-补水后'
+            });
+
+            // 120吨大站数据
+            largeRecords.push({
+                system: 'large',
+                time: '2024-11-03T09:30',
+                height: 81,
+                meter: 4081,
+                electric: 8500.0,
+                waterTemp: 55.0,
+                envTemp: 12.0,
+                level: 21,
+                speed: 18,
+                status: '补水前',
+                note: '11月3日测试-补水前'
+            });
+
+            largeRecords.push({
+                system: 'large',
+                time: '2024-11-03T09:57',
+                height: 132,
+                meter: 4094,
+                electric: 8558.0,
+                waterTemp: 58.5,
+                envTemp: 12.0,
+                level: 37,
+                speed: 18,
+                status: '补水后',
+                note: '11月3日测试-补水后'
+            });
+
+            saveData();
+            updateHistoryTable();
+            alert('✅ 完整测试数据导入成功！\n\n已导入：\n• 40吨小站：2条记录（含能耗）\n• 120吨大站：2条记录（含能耗）\n\n现在可以：\n1. 切换到"物理验证"分析设备准确性\n2. 切换到"能耗分析"计算单位能耗\n3. 查看"综合报告"了解完整评估');
+        }
+
+        function updateDisplay() {
+            updateHistoryTable();
+        }
+
+        // 数据持久化
+        function saveData() {
+            const data = {
+                smallRecords,
+                largeRecords
+            };
+            localStorage.setItem('waterTankData', JSON.stringify(data));
+        }
+
+        function loadData() {
+            const saved = localStorage.getItem('waterTankData');
+            if (saved) {
+                const data = JSON.parse(saved);
+                smallRecords = data.smallRecords || [];
+                largeRecords = data.largeRecords || [];
+                updateHistoryTable();
+            }
+        }
+
+        // 自动刷新时间（每分钟更新一次，但只在自动模式下）
+        setInterval(() => {
+            if (timeMode.small === 'auto') {
+                updateTime('small');
+            }
+            if (timeMode.large === 'auto') {
+                updateTime('large');
+            }
+        }, 60000);
+    </script>
+</body>
+</html>
+                        
