@@ -1,0 +1,7 @@
+{
+    "name": "SmartBox Inventory",
+    "description": "An AI-powered inventory management system. Scan QR codes to view box contents, organize items with custom attributes, and use smart search to locate belongings.",
+    "requestFramePermissions": [
+      "camera"
+    ]
+  }

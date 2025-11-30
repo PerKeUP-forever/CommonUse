@@ -10,6 +10,7 @@
             padding: 0;
             box-sizing: border-box;
         }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -19,32 +20,37 @@
             align-items: center;
             padding: 20px;
         }
+
         .container {
             max-width: 800px;
             width: 100%;
         }
+
         .header {
             text-align: center;
             color: white;
             margin-bottom: 40px;
         }
+
         .header h1 {
             font-size: 2.5em;
             margin-bottom: 10px;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
         }
+
         .header p {
             font-size: 1.1em;
             opacity: 0.9;
         }
+
         .cards {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 25px;
             margin-bottom: 30px;
         }
-        .card {
 
+        .card {
             background: white;
             border-radius: 15px;
             padding: 30px;
@@ -53,151 +59,85 @@
             cursor: pointer;
             text-decoration: none;
             color: inherit;
-
             display: block;
-
         }
-
-
 
         .card:hover {
-
             transform: translateY(-5px);
-
             box-shadow: 0 15px 40px rgba(0,0,0,0.3);
-
         }
-
-
 
         .card-icon {
-
             font-size: 3em;
-
             margin-bottom: 15px;
-
         }
-
-
 
         .card-title {
-
             font-size: 1.5em;
-
             font-weight: 600;
-
             margin-bottom: 10px;
-
             color: #333;
-
         }
-
-
 
         .card-description {
-
             color: #666;
-
             line-height: 1.6;
-
         }
-
-
 
         .footer {
-
             text-align: center;
-
             color: white;
-
             opacity: 0.8;
-
             font-size: 0.9em;
-
         }
-
-
 
         @media (max-width: 600px) {
-
             .header h1 {
-
                 font-size: 2em;
-
             }
-
             
-
             .cards {
-
                 grid-template-columns: 1fr;
-
             }
-
         }
-
     </style>
-
 </head>
-
 <body>
-
     <div class="container">
-
         <div class="header">
-
             <h1>🏥 健康工具集</h1>
-
             <p>选择您需要的健康管理工具</p>
-
         </div>
-
-
 
         <div class="cards">
-
             <a href="Water tank and ennerge measure.html" class="card">
-
                 <div class="card-icon">💧</div>
-
                 <div class="card-title">水箱与能量测量</div>
-
                 <div class="card-description">
-
                     监测您的每日饮水量和能量摄入，帮助您保持健康的生活习惯。
-
                 </div>
-
             </a>
-
-
 
             <a href="blood_pressure_reminder.html" class="card">
-
                 <div class="card-icon">❤️</div>
-
                 <div class="card-title">血压提醒</div>
-
                 <div class="card-description">
-
                     定时提醒测量血压，记录并追踪您的血压变化趋势。
-
                 </div>
-
             </a>
 
+            <a href="googleboxmanager/index.html" class="card">
+                <div class="card-icon">📦</div>
+                <div class="card-title">Google Box Manager</div>
+                <div class="card-description">
+                    管理和组织您的 Google 资源，提供便捷的文件和数据管理功能。
+                </div>
+            </a>
         </div>
-
-
 
         <div class="footer">
-
             <p>© 2024 健康工具集 | 关注健康，关爱生活</p>
-
         </div>
-
     </div>
-
 </body>
-
 </html>
