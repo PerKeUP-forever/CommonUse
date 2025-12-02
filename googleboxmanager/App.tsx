@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   BoxIcon, 
@@ -43,6 +44,9 @@ function App() {
     if (view.type === 'BOX_DETAIL' || view.type === 'ITEM_FORM') {
       return boxes.find(b => b.id === view.boxId);
     }
+    if (view.type === 'BOX_FORM' && view.boxId) {
+      return boxes.find(b => b.id === view.boxId);
+    }
     return null;
   }, [boxes, view]);
 
@@ -62,16 +66,7 @@ function App() {
     } else {
       // Suggest creating a new box
       if(confirm(`未找到箱子 ID "${code}"。是否立即创建？`)) {
-        const newBox: Box = {
-           id: code,
-           name: `新箱子 ${code.substring(0,4)}`,
-           location: '未分配',
-           items: [],
-           color: BOX_COLORS[Math.floor(Math.random() * BOX_COLORS.length)]
-        };
-        const updated = addBox(newBox);
-        setBoxes(updated);
-        setView({ type: 'BOX_DETAIL', boxId: code });
+        setView({ type: 'BOX_FORM', scannedId: code });
       } else {
          setView({ type: 'DASHBOARD' });
       }
@@ -203,18 +198,7 @@ function App() {
           ))}
           {/* Add New Box Button */}
            <div 
-              onClick={() => {
-                  const id = `box-${Date.now().toString().slice(-4)}`;
-                  addBox({
-                      id,
-                      name: "新箱子",
-                      location: "货架 ??",
-                      items: [],
-                      color: "bg-slate-50"
-                  });
-                  setBoxes(getBoxes());
-                  setView({ type: 'BOX_DETAIL', boxId: id });
-              }}
+              onClick={() => setView({ type: 'BOX_FORM' })}
               className="p-4 rounded-xl border-2 border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400 cursor-pointer hover:border-brand-400 hover:text-brand-500 min-h-[120px]"
             >
                 <PlusIcon className="w-6 h-6 mb-1" />
@@ -225,6 +209,112 @@ function App() {
     </div>
   );
 
+  const BoxForm = ({ existingBox, scannedId }: { existingBox?: Box, scannedId?: string }) => {
+    const [name, setName] = useState(existingBox?.name || '');
+    const [location, setLocation] = useState(existingBox?.location || '');
+    const [color, setColor] = useState(existingBox?.color || BOX_COLORS[0]);
+    // If scanning, use scanned ID, else use existing ID, else generate one
+    const [id, setId] = useState(existingBox?.id || scannedId || `box-${Date.now().toString().slice(-4)}`);
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        
+        const boxData: Box = {
+            id,
+            name,
+            location,
+            color,
+            items: existingBox?.items || []
+        };
+
+        if (existingBox) {
+            const updated = updateBox(boxData);
+            setBoxes(updated);
+        } else {
+            const updated = addBox(boxData);
+            setBoxes(updated);
+        }
+        setView({ type: 'BOX_DETAIL', boxId: id });
+    };
+
+    return (
+        <div className="pb-10">
+             <div className="flex items-center gap-3 mb-6">
+                <button 
+                    onClick={() => existingBox ? setView({ type: 'BOX_DETAIL', boxId: existingBox.id }) : setView({ type: 'DASHBOARD' })} 
+                    className="p-2 -ml-2 rounded-full hover:bg-slate-200"
+                >
+                    <ArrowLeftIcon className="w-6 h-6 text-slate-600" />
+                </button>
+                <h1 className="text-xl font-bold text-slate-900">{existingBox ? '编辑箱子属性' : '创建新箱子'}</h1>
+             </div>
+
+             <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-4">
+                    <div>
+                        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">箱子 ID (二维码内容)</label>
+                        <input 
+                            type="text" 
+                            value={id} 
+                            disabled={!!existingBox} // ID cannot be changed once created to maintain QR link
+                            onChange={e => setId(e.target.value)}
+                            className="w-full p-2 bg-slate-50 border border-slate-200 rounded text-slate-500 font-mono text-sm"
+                        />
+                         <p className="text-[10px] text-slate-400 mt-1">
+                             {existingBox ? '箱子 ID 无法修改，因为它与二维码绑定。' : '如果您有预制的二维码，请在此输入或扫描。'}
+                         </p>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">箱子名称</label>
+                        <input 
+                            required
+                            type="text" 
+                            value={name} 
+                            onChange={e => setName(e.target.value)}
+                            className="w-full p-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none"
+                            placeholder="例如：书房杂物、冬季衣物"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">存放位置</label>
+                        <input 
+                            required
+                            type="text" 
+                            value={location} 
+                            onChange={e => setLocation(e.target.value)}
+                            className="w-full p-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none"
+                            placeholder="例如：主卧衣柜、地下室货架 A1"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">外观颜色标记</label>
+                        <div className="flex flex-wrap gap-3">
+                            {BOX_COLORS.map(c => (
+                                <button
+                                    key={c}
+                                    type="button"
+                                    onClick={() => setColor(c)}
+                                    className={`w-8 h-8 rounded-full border-2 transition-transform ${c} ${color === c ? 'border-brand-600 scale-110 ring-2 ring-brand-200' : 'border-transparent hover:scale-105'}`}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                <button 
+                    type="submit"
+                    className="w-full bg-brand-600 text-white font-bold py-3 rounded-xl hover:bg-brand-700 transition-colors shadow-lg shadow-brand-200"
+                >
+                    {existingBox ? '保存修改' : '创建箱子'}
+                </button>
+             </form>
+        </div>
+    );
+  };
+
   const BoxDetail = ({ box }: { box: Box }) => (
     <div className="pb-20">
       <div className="flex items-center gap-3 mb-6">
@@ -232,9 +322,18 @@ function App() {
           <ArrowLeftIcon className="w-6 h-6 text-slate-600" />
         </button>
         <div className="flex-1">
-           <h1 className="text-2xl font-bold text-slate-900">{box.name}</h1>
-           <p className="text-slate-500 text-sm flex items-center gap-2">
-             <span>{box.location}</span> • <span>ID: {box.id}</span>
+           <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-bold text-slate-900">{box.name}</h1>
+                <button 
+                    onClick={() => setView({ type: 'BOX_FORM', boxId: box.id })}
+                    className="p-1.5 text-slate-400 hover:text-brand-600 bg-white border border-slate-200 rounded-lg shadow-sm"
+                    title="编辑箱子属性"
+                >
+                    <EditIcon className="w-4 h-4" />
+                </button>
+           </div>
+           <p className="text-slate-500 text-sm flex items-center gap-2 mt-1">
+             <span>{box.location}</span> • <span className="font-mono text-xs bg-slate-100 px-1 rounded">ID: {box.id}</span>
            </p>
         </div>
         <button 
@@ -552,6 +651,7 @@ function App() {
           {view.type === 'DASHBOARD' && <Dashboard />}
           {view.type === 'BOX_DETAIL' && currentBox && <BoxDetail box={currentBox} />}
           {view.type === 'ITEM_FORM' && currentBox && <ItemForm box={currentBox} existingItem={currentItem || undefined} />}
+          {view.type === 'BOX_FORM' && <BoxForm existingBox={currentBox || undefined} scannedId={view.scannedId} />}
           {view.type === 'SEARCH' && <SearchInterface />}
         </main>
       </div>
